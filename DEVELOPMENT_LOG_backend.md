@@ -447,6 +447,48 @@ feat: add Task model and initial migration
 feat: add task serializer validation
 ```
 
+
+## 14. Implementação inicial do CRUD de tarefas
+
+Foi criado o `TaskViewSet`, responsável por receber as requisições HTTP relacionadas às tarefas.
+
+O ViewSet foi implementado utilizando:
+
+```python
+
+ModelViewSet
+
+Com essa implementação, a API passou a oferecer automaticamente operações para:
+
+listar tarefas;
+criar tarefas;
+visualizar uma tarefa específica;
+atualizar tarefas;
+excluir tarefas.
+
+Também foi criado o arquivo: tasks/urls.py
+
+Foi configurada a obrigatoriedade de autenticação para acessar as tarefas.
+
+O ViewSet também passou a associar automaticamente cada nova tarefa ao usuário autenticado através do método:
+
+perform_create()
+
+Além disso, a listagem de tarefas foi modificada para retornar apenas as tarefas pertencentes ao usuário autenticado utilizando:
+
+get_queryset()
+Testes realizados
+
+Foram realizados testes utilizando a Browsable API do Django REST Framework.
+
+Durante os testes foi identificado um erro relacionado ao campo obrigatório user, o que confirmou que cada tarefa obrigatoriamente pertence a um usuário.
+
+Após a implementação dos métodos perform_create() e get_queryset(), foi possível:
+
+criar tarefas com sucesso;
+listar apenas as tarefas do usuário autenticado;
+confirmar o funcionamento do CRUD inicial.
+
 ### Decisão técnica
 
 Foi evitado o uso de um único commit grande.
