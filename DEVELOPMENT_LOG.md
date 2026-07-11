@@ -447,48 +447,6 @@ feat: add Task model and initial migration
 feat: add task serializer validation
 ```
 
-
-## 14. Implementação inicial do CRUD de tarefas
-
-Foi criado o `TaskViewSet`, responsável por receber as requisições HTTP relacionadas às tarefas.
-
-O ViewSet foi implementado utilizando:
-
-```python
-
-ModelViewSet
-
-Com essa implementação, a API passou a oferecer automaticamente operações para:
-
-listar tarefas;
-criar tarefas;
-visualizar uma tarefa específica;
-atualizar tarefas;
-excluir tarefas.
-
-Também foi criado o arquivo: tasks/urls.py
-
-Foi configurada a obrigatoriedade de autenticação para acessar as tarefas.
-
-O ViewSet também passou a associar automaticamente cada nova tarefa ao usuário autenticado através do método:
-
-perform_create()
-
-Além disso, a listagem de tarefas foi modificada para retornar apenas as tarefas pertencentes ao usuário autenticado utilizando:
-
-get_queryset()
-Testes realizados
-
-Foram realizados testes utilizando a Browsable API do Django REST Framework.
-
-Durante os testes foi identificado um erro relacionado ao campo obrigatório user, o que confirmou que cada tarefa obrigatoriamente pertence a um usuário.
-
-Após a implementação dos métodos perform_create() e get_queryset(), foi possível:
-
-criar tarefas com sucesso;
-listar apenas as tarefas do usuário autenticado;
-confirmar o funcionamento do CRUD inicial.
-
 ### Decisão técnica
 
 Foi evitado o uso de um único commit grande.
@@ -507,3 +465,148 @@ git status
 
 antes da confirmação.
 
+---
+
+## 14. Implementação inicial do CRUD de tarefas
+
+Foi criado o `TaskViewSet`, responsável por receber as requisições HTTP relacionadas às tarefas.
+
+O ViewSet foi implementado utilizando:
+
+```python
+viewsets.ModelViewSet
+```
+
+Com essa implementação, a API passou a oferecer operações para:
+
+- listar tarefas;
+- criar tarefas;
+- visualizar uma tarefa específica;
+- atualizar tarefas;
+- excluir tarefas.
+
+Também foi criado o arquivo:
+
+```text
+tasks/urls.py
+```
+
+Nesse arquivo, foi utilizado o `DefaultRouter` do Django REST Framework para gerar automaticamente as rotas do CRUD.
+
+As rotas foram conectadas ao arquivo principal:
+
+```text
+config/urls.py
+```
+
+Com isso, o endpoint de tarefas passou a ficar disponível em:
+
+```text
+/api/tasks/
+```
+
+### Rotas disponibilizadas
+
+```text
+GET    /api/tasks/
+POST   /api/tasks/
+GET    /api/tasks/<id>/
+PUT    /api/tasks/<id>/
+PATCH  /api/tasks/<id>/
+DELETE /api/tasks/<id>/
+```
+
+### Autenticação e isolamento dos dados
+
+Foi configurada a permissão:
+
+```python
+permissions.IsAuthenticated
+```
+
+A criação de tarefas passou a associar automaticamente a nova tarefa ao usuário autenticado:
+
+```python
+def perform_create(self, serializer):
+    serializer.save(user=self.request.user)
+```
+
+A listagem também passou a retornar apenas as tarefas pertencentes ao usuário autenticado:
+
+```python
+def get_queryset(self):
+    return Task.objects.filter(user=self.request.user)
+```
+
+Essa implementação impede que um usuário visualize ou manipule tarefas de outro usuário.
+
+### Testes realizados
+
+Foram realizados testes utilizando a Browsable API do Django REST Framework.
+
+Durante o primeiro teste de criação, foi identificado o erro:
+
+```text
+NOT NULL constraint failed: tasks_task.user_id
+```
+
+O erro ocorreu porque o model exige que toda tarefa tenha um usuário associado, mas o usuário ainda não estava sendo atribuído durante a criação.
+
+Após a implementação do método `perform_create()`, a tarefa passou a ser salva corretamente com o usuário autenticado como proprietário.
+
+Também foi criado um superusuário com:
+
+```bash
+python manage.py createsuperuser
+```
+
+A autenticação de sessão da Browsable API foi disponibilizada pela rota:
+
+```text
+/api-auth/
+```
+
+Depois do login, foi possível criar uma tarefa com sucesso. A API retornou:
+
+```text
+HTTP 201 Created
+```
+
+Em seguida, uma requisição `GET` confirmou que a tarefa criada estava sendo listada corretamente.
+
+### Configuração de redirecionamento
+
+Para facilitar os testes pela interface navegável, foram adicionadas as configurações:
+
+```python
+LOGIN_REDIRECT_URL = "/api/tasks/"
+LOGOUT_REDIRECT_URL = "/api-auth/login/"
+```
+
+Essas configurações são usadas apenas para melhorar o fluxo de teste com autenticação por sessão no navegador.
+
+A autenticação definitiva do aplicativo mobile ainda será implementada com tokens.
+
+### Decisão técnica
+
+Foi decidido que o aplicativo não enviará o identificador do usuário ao criar uma tarefa.
+
+O backend identifica o usuário por meio da autenticação e associa a tarefa automaticamente.
+
+Essa abordagem reduz o risco de um usuário tentar criar tarefas em nome de outra pessoa.
+
+Também foi escolhido filtrar as tarefas pelo usuário autenticado em vez de utilizar:
+
+```python
+Task.objects.all()
+```
+
+Isso garante o isolamento dos dados exigido pelo desafio.
+
+### Uso de IA
+
+A IA foi utilizada para explicar o funcionamento dos ViewSets, Routers, permissões, autenticação por sessão e isolamento dos dados por usuário.
+
+O erro de integridade encontrado durante o teste foi analisado para compreender sua causa antes da correção.
+
+---
