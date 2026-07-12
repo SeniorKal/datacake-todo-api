@@ -745,3 +745,93 @@ Essa abordagem reduz a quantidade de informações solicitadas ao usuário e man
 A IA foi utilizada para explicar o funcionamento das Generic Views do Django REST Framework, a responsabilidade dos Serializers durante o cadastro, a utilização do método `create_user()` para armazenamento seguro da senha e as diferenças entre permissões públicas (`AllowAny`) e autenticadas (`IsAuthenticated`).
 
 Todas as implementações foram compreendidas antes de serem adicionadas ao projeto.
+
+## 16. Implementação da autenticação JWT
+
+Foi implementado o sistema de autenticação utilizando JSON Web Tokens (JWT) através da biblioteca `djangorestframework-simplejwt`.
+
+A biblioteca foi adicionada ao projeto para permitir autenticação baseada em tokens, substituindo o uso exclusivo de sessões durante a comunicação entre o aplicativo mobile e a API.
+
+As dependências do projeto foram atualizadas no arquivo:
+
+```text
+requirements.txt
+```
+
+### Configuração do Django REST Framework
+
+No arquivo:
+
+```text
+config/settings.py
+```
+
+foi configurado o Django REST Framework para utilizar autenticação JWT juntamente com autenticação por sessão.
+
+Essa configuração permite que:
+
+- o aplicativo React Native utilize Bearer Tokens;
+- a Browsable API continue funcionando normalmente durante o desenvolvimento.
+
+### Endpoints de autenticação
+
+Foram adicionadas duas rotas:
+
+```text
+POST /api/login/
+POST /api/token/refresh/
+```
+
+O endpoint de login é responsável por autenticar o usuário e retornar:
+
+- Access Token;
+- Refresh Token.
+
+O endpoint de refresh permite gerar um novo Access Token sem que o usuário precise informar novamente suas credenciais.
+
+### Personalização do login
+
+A implementação padrão do SimpleJWT utiliza o campo `username` para autenticação.
+
+Como o aplicativo mobile foi projetado para utilizar apenas e-mail e senha, foi criado um serializer personalizado chamado:
+
+```text
+LoginSerializer
+```
+
+Esse serializer recebe:
+
+- email;
+- password.
+
+Internamente o e-mail é convertido para o campo `username`, permitindo reutilizar toda a lógica original do Django sem alterar o funcionamento da autenticação.
+
+Também foi criada uma `LoginView`, responsável por utilizar esse serializer personalizado.
+
+Dessa forma, a API passou a aceitar exatamente o mesmo formato utilizado pelo aplicativo mobile.
+
+### Testes realizados
+
+Foram realizados testes utilizando a Browsable API do Django REST Framework.
+
+Foram verificados os seguintes cenários:
+
+- login com credenciais válidas;
+- login com senha incorreta;
+- login utilizando usuário inexistente;
+- geração do Access Token;
+- geração do Refresh Token.
+
+Também foi confirmado que o endpoint passou a utilizar o campo `email` em vez de `username`, mantendo consistência entre backend e frontend.
+
+### Decisão técnica
+
+Foi decidido personalizar a autenticação do SimpleJWT para manter o contrato da API alinhado com a interface do aplicativo mobile.
+
+Essa abordagem elimina adaptações futuras no frontend e torna a API mais intuitiva para consumo.
+
+### Uso de IA
+
+A IA foi utilizada para explicar o funcionamento do JWT, a diferença entre Access Token e Refresh Token, a personalização do `TokenObtainPairSerializer`, a criação de uma `LoginView` personalizada e o fluxo completo de autenticação entre cliente e servidor.
+
+Todas as implementações foram compreendidas antes de serem adicionadas ao projeto.
