@@ -1,5 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
+from django.contrib.auth import authenticate
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
 User = get_user_model()
@@ -15,7 +17,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         write_only=True,
         style={"input_type": "password"},
     )
-
+    
     class Meta:
         model = User
         fields = [
@@ -52,3 +54,23 @@ class RegisterSerializer(serializers.ModelSerializer):
             email=validated_data["email"],
             password=validated_data["password"],
         )
+    
+class LoginSerializer(TokenObtainPairSerializer):
+    username_field = "email"
+
+    def validate(self, attrs):
+        credentials = {
+            "username": attrs.get("email"),
+            "password": attrs.get("password"),
+        }
+
+        user = authenticate(**credentials)
+
+        if user is None:
+            raise serializers.ValidationError(
+                "E-mail ou senha inválidos."
+            )
+
+        attrs["username"] = attrs["email"]
+
+        return super().validate(attrs)
