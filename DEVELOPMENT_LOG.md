@@ -609,4 +609,139 @@ A IA foi utilizada para explicar o funcionamento dos ViewSets, Routers, permiss�
 
 O erro de integridade encontrado durante o teste foi analisado para compreender sua causa antes da correção.
 
----
+## 15. Implementação do endpoint de cadastro de usuários
+
+Foi implementado o primeiro endpoint responsável pelo cadastro de usuários da aplicação.
+
+O endpoint foi disponibilizado em:
+
+```text
+POST /api/register/
+```
+
+Para essa implementação foi criado o arquivo:
+
+```text
+accounts/serializers.py
+```
+
+contendo o `RegisterSerializer`, responsável por validar os dados recebidos e criar novos usuários.
+
+Também foi criada a classe:
+
+```python
+RegisterView
+```
+
+utilizando:
+
+```python
+generics.CreateAPIView
+```
+
+Essa classe recebe requisições HTTP do tipo `POST`, envia os dados para o serializer, executa todas as validações e cria o usuário no banco de dados.
+
+A rota foi registrada no arquivo:
+
+```text
+accounts/urls.py
+```
+
+e integrada automaticamente ao projeto através de:
+
+```text
+config/urls.py
+```
+
+### Campos utilizados
+
+O cadastro utiliza os seguintes campos:
+
+- email;
+- password;
+- password_confirm.
+
+Embora o model padrão do Django exija o campo `username`, foi decidido manter uma interface mais simples para o usuário.
+
+Internamente, o backend utiliza o próprio e-mail como username durante a criação da conta.
+
+A criação é realizada utilizando:
+
+```python
+User.objects.create_user(
+    username=validated_data["email"],
+    email=validated_data["email"],
+    password=validated_data["password"],
+)
+```
+
+Essa abordagem mantém compatibilidade com o sistema de autenticação do Django sem exigir que o usuário escolha um nome de usuário.
+
+### Validações implementadas
+
+Foram implementadas validações para:
+
+- tamanho mínimo da senha;
+- confirmação da senha;
+- existência de outro usuário utilizando o mesmo e-mail;
+- normalização do e-mail para letras minúsculas.
+
+Os campos de senha foram configurados como:
+
+```python
+write_only=True
+```
+
+garantindo que nunca sejam retornados nas respostas da API.
+
+### Permissões
+
+O endpoint de cadastro utiliza:
+
+```python
+permissions.AllowAny
+```
+
+permitindo que usuários ainda não autenticados possam criar uma conta.
+
+Essa configuração é diferente dos endpoints de tarefas, que utilizam:
+
+```python
+permissions.IsAuthenticated
+```
+
+pois exigem autenticação.
+
+### Testes realizados
+
+Foram realizados testes utilizando a Browsable API do Django REST Framework.
+
+Os seguintes cenários foram verificados:
+
+- cadastro realizado com sucesso;
+- tentativa de cadastro utilizando senhas diferentes;
+- tentativa de cadastro utilizando um e-mail já existente.
+
+Nos casos inválidos, a API retornou corretamente:
+
+```text
+HTTP 400 Bad Request
+```
+
+com mensagens específicas indicando o motivo da falha.
+
+Foi confirmado que apenas usuários válidos são criados no banco de dados.
+
+### Decisão técnica
+
+Foi decidido manter o fluxo de cadastro baseado apenas em e-mail e senha para simplificar a experiência do usuário no aplicativo mobile.
+
+O campo `username` permanece apenas como um requisito interno do Django, sendo preenchido automaticamente com o mesmo valor do e-mail.
+
+Essa abordagem reduz a quantidade de informações solicitadas ao usuário e mantém compatibilidade com o sistema de autenticação padrão do framework.
+
+### Uso de IA
+
+A IA foi utilizada para explicar o funcionamento das Generic Views do Django REST Framework, a responsabilidade dos Serializers durante o cadastro, a utilização do método `create_user()` para armazenamento seguro da senha e as diferenças entre permissões públicas (`AllowAny`) e autenticadas (`IsAuthenticated`).
+
+Todas as implementações foram compreendidas antes de serem adicionadas ao projeto.
