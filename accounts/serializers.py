@@ -59,18 +59,22 @@ class LoginSerializer(TokenObtainPairSerializer):
     username_field = "email"
 
     def validate(self, attrs):
-        credentials = {
-            "username": attrs.get("email"),
-            "password": attrs.get("password"),
-        }
+        email = attrs.get("email", "").strip().lower()
+        password = attrs.get("password")
 
-        user = authenticate(**credentials)
+        user = authenticate(
+            username=email,
+            password=password,
+        )
 
         if user is None:
             raise serializers.ValidationError(
                 "E-mail ou senha inválidos."
             )
 
-        attrs["username"] = attrs["email"]
+        refresh = self.get_token(user)
 
-        return super().validate(attrs)
+        return {
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+        }
